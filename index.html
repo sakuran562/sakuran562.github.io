@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>K.545 練習</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+/* VOICE: friendly practice companion, calm and focused
+   IDEA: a music stand — score above, keyboard below, the next note glowing
+   PICTURE: live staff + 88-key slice that lights the next key
+   COLOUR and TYPE: ivory/ebony keys, right hand blue, left hand orange; Zen Maru Gothic
+   LAYOUT: title, next-note card, staff, keyboard, controls; stacks on narrow screens */
+:root{color-scheme:light dark;--bg:light-dark(#f6f5f1,#15161a);--card:light-dark(#ffffff,#1f2026);--ink:light-dark(#1b1b1f,#ecebe6);--mute:light-dark(#6b6a66,#a3a29c);--line:light-dark(#d9d7cf,#3a3b42);--rh:#2463eb;--lh:#e8590c;--ok:#16a34a;--ng:#dc2626}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Zen Maru Gothic","Hiragino Maru Gothic ProN",system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(16px,3vw,32px) max(4vw,14px)}
+.wrap{max-width:1100px;margin:0 auto}
+h1{font-size:clamp(24px,4vw,34px);line-height:1.1;margin:0 0 4px;font-weight:900}
+h2{font-size:20px;margin:0 0 8px}
+.sub{color:var(--mute);margin:0;font-size:14px}
+#status{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:6px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:14px}
+#status i{width:10px;height:10px;border-radius:50%;background:var(--ng);flex:none}
+#status.on i{background:var(--ok)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.next{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.hand{border-radius:14px;padding:10px 14px;border:2px solid var(--line);background:var(--card)}
+.hand.r{border-color:var(--rh)}.hand.l{border-color:var(--lh)}
+.hand small{display:block;color:var(--mute);font-size:13px}
+.hand b{font-size:clamp(34px,7vw,52px);line-height:1.05;display:block}
+.hand.r b{color:var(--rh)}.hand.l b{color:var(--lh)}
+.hand span{font-size:15px}
+.hand.off{opacity:.35}
+#msg{min-height:1.6em;font-weight:700;margin:4px 0 10px}
+#msg.ng{color:var(--ng)}#msg.ok{color:var(--ok)}
+.staff{overflow-x:auto;background:#fffef9;border-radius:12px;border:1px solid var(--line)}
+.staff svg{display:block}
+.kb{position:relative;height:clamp(120px,22vw,190px);margin-top:14px;user-select:none}
+.w,.b{position:absolute;top:0;border-radius:0 0 7px 7px;display:flex;align-items:flex-end;justify-content:center;font-weight:700;font-size:clamp(11px,1.6vw,15px);padding-bottom:6px;transition:background .08s}
+.w{height:100%;background:#fffef9;border:1px solid #9a988f;color:#8a887f}
+.b{height:62%;background:#1d1d21;color:#fff;z-index:2}
+.w.rh,.b.rh{background:var(--rh);color:#fff}
+.w.lh,.b.lh{background:var(--lh);color:#fff}
+.w.hit,.b.hit{background:var(--ok);color:#fff}
+.w.bad,.b.bad{background:var(--ng);color:#fff}
+.w.play,.b.play{background:#9bb8f5}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{border:0;border-radius:0;min-width:64px}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+button,select{font:inherit;font-size:16px;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.main{background:var(--rh);color:#fff;border-color:var(--rh);font-weight:700}
+button:focus-visible,select:focus-visible{outline:3px solid var(--rh);outline-offset:2px}
+label{display:inline-flex;align-items:center;gap:6px;font-size:15px}
+input[type=range]{width:140px;accent-color:var(--rh)}
+.stats{display:flex;gap:18px;flex-wrap:wrap;color:var(--mute);font-size:14px;margin-top:10px}
+.stats b{color:var(--ink);font-size:18px}
+.help ol{margin:6px 0 0;padding-left:1.3em}.help li{margin:4px 0}
+.note{font-size:13px;color:var(--mute)}
+@media(max-width:600px){.seg button{min-width:52px;padding:0 8px}}
+@media(prefers-reduced-motion:reduce){.w,.b{transition:none}}
+</style>
+</head>
+<body>
+<header class="band"><div class="wrap">
+  <h1>K.545 第1楽章 練習</h1>
+  <p class="sub">モーツァルト ピアノソナタ ハ長調　いまは1〜4小節</p>
+  <div id="status"><i></i><span id="stxt">ピアノを探しています…</span></div>
+</div></header>
+
+<main class="band" style="padding-top:0"><div class="wrap">
+  <div class="next">
+    <div class="hand r" id="hr"><small>右手　次の音</small><b id="nr">–</b><span id="fr"></span></div>
+    <div class="hand l" id="hl"><small>左手　次の音</small><b id="nl">–</b><span id="fl"></span></div>
+  </div>
+  <div id="msg">ピアノで光っている鍵盤を弾いてね。</div>
+  <div class="staff" id="staffBox"><svg id="staff" height="250"></svg></div>
+  <div class="kb" id="kb"></div>
+
+  <div class="ctrl">
+    <div class="seg" role="group" aria-label="練習する手">
+      <button data-h="R" aria-pressed="false">右手</button>
+      <button data-h="L" aria-pressed="false">左手</button>
+      <button data-h="B" aria-pressed="false">両手</button>
+    </div>
+    <label>小節 <select id="from"></select> 〜 <select id="to"></select></label>
+    <button class="main" id="restart">最初から</button>
+    <button id="demo">お手本を聴く</button>
+    <label>テンポ ♩=<b id="bpmv">60</b><input type="range" id="bpm" min="30" max="132" step="2" value="60"></label>
+  </div>
+  <div class="stats">
+    <div>進み具合 <b id="prog">0 / 0</b></div>
+    <div>ミス <b id="miss">0</b></div>
+    <div>かかった時間 <b id="time">–</b></div>
+  </div>
+</div></main>
+
+<section class="band help"><div class="wrap card">
+  <h2>ピアノとのつなぎ方（iPad）</h2>
+  <ol>
+    <li>App Store から無料アプリ「Web MIDI Browser」を入れる。</li>
+    <li>ロールアップピアノの Bluetooth をオンにして、Web MIDI Browser のメニューから Bluetooth MIDI でピアノに接続する。</li>
+    <li>Web MIDI Browser でこのページを開く。上の丸が緑になって、ピアノの名前が出たら準備完了。</li>
+    <li>青く光った鍵盤を右手で、オレンジ色の鍵盤を左手で弾く。正しい音を弾くまで次には進まないよ。</li>
+  </ol>
+  <p class="note">楽譜の見方：1〜4小節は、左手もト音記号で書かれています。指番号は楽譜に書いてあるものだけを表示しています。</p>
+</div></section>
+
+<script>
+{
+// ---- 楽譜データ（t: 4分音符単位の開始位置, d: 長さ, f: 指番号）----
+const RH=[
+ [72,0,2,1],[76,2,1,3],[79,3,1,5],
+ [71,4,1.5,1],[72,5.5,.25],[74,5.75,.25],[72,6,1],
+ [81,8,2,3],[79,10,1],[84,11,1],
+ [79,12,1],[77,13,1/6],[79,13+1/6,1/6],[77,13+2/6,1/6],[76,13.5,.25],[77,13.75,.25],[76,14,1]
+];
+const LHpat=[[60,67,64,67,5,1,3,1],[62,67,65,67,4,1,2,1],[60,69,65,69,5,1,2,1],[59,67,62,67,5,1,3,1]];
+const LHbars=[[0,0],[1,0],[2,0],[3,0]]; // 各小節の前半・後半パターン（後半はすべて C-G-E-G）
+const LH=[];
+LHbars.forEach((p,m)=>{[LHpat[p[0]],LHpat[p[1]]].forEach((pt,h)=>{for(let i=0;i<4;i++)LH.push([pt[i],m*4+h*2+i*.5,.5,pt[i+4]])})});
+const MAXM=4;
+const NAMES=['C','C♯','D','E♭','E','F','F♯','G','G♯','A','B♭','B'];
+const nm=n=>NAMES[n%12];
+
+// ---- 状態 ----
+const $=id=>document.getElementById(id);
+let st={hand:'B',from:1,to:MAXM,bpm:60};
+try{Object.assign(st,JSON.parse(localStorage.getItem('k545')||'{}'))}catch(e){}
+let events=[],idx=0,pending=new Set(),miss=0,t0=null,demoTimers=[],audio=null;
+
+function build(){
+  const use=[];
+  if(st.hand!=='L')RH.forEach(n=>use.push({n:n[0],t:n[1],d:n[2],f:n[3],h:'R'}));
+  if(st.hand!=='R')LH.forEach(n=>use.push({n:n[0],t:n[1],d:n[2],f:n[3],h:'L'}));
+  const lo=(st.from-1)*4,hi=st.to*4,map=new Map();
+  use.filter(x=>x.t>=lo-1e-6&&x.t<hi-1e-6).forEach(x=>{const k=Math.round(x.t*48);if(!map.has(k))map.set(k,{t:x.t,notes:[]});map.get(k).notes.push(x)});
+  events=[...map.values()].sort((a,b)=>a.t-b.t);
+}
+function reset(){
+  stopDemo();build();idx=0;miss=0;t0=null;setPending();
+  $('time').textContent='–';$('miss').textContent='0';say('ピアノで光っている鍵盤を弾いてね。','');
+  drawStaff();show();save();
+}
+function setPending(){pending=new Set(events[idx]?events[idx].notes.map(x=>x.n):[])}
+function save(){try{localStorage.setItem('k545',JSON.stringify(st))}catch(e){}}
+function say(t,c){const m=$('msg');m.textContent=t;m.className=c}
+
+// ---- 鍵盤 ----
+const LO=57,HI=86,keys={};
+(function(){
+  const kb=$('kb');const whites=[];for(let n=LO;n<=HI;n++)if(![1,3,6,8,10].includes(n%12))whites.push(n);
+  const W=100/whites.length;let html='';
+  whites.forEach((n,i)=>{html+=`<div class="w" id="k${n}" style="left:${i*W}%;width:${W}%">${n%12===0?'C'+(n/12-1):''}</div>`;
+    if([0,2,5,7,9].includes(n%12)&&n+1<=HI)html+=`<div class="b" id="k${n+1}" style="left:${(i+1)*W-W*.3}%;width:${W*.6}%"></div>`});
+  kb.innerHTML=html;for(let n=LO;n<=HI;n++)keys[n]=$('k'+n);
+})();
+function paintKeys(){
+  for(const n in keys){const k=keys[n];if(!k)continue;k.classList.remove('rh','lh');if(!k.classList.contains('hit')&&!k.classList.contains('bad')&&k.classList.contains('w'))k.textContent=(+n)%12===0?'C'+(n/12-1):'';if(k.classList.contains('b')&&!k.classList.contains('bad'))k.textContent=''}
+  const ev=events[idx];if(!ev)return;
+  ev.notes.forEach(x=>{const k=keys[x.n];if(!k)return;if(pending.has(x.n)){k.classList.add(x.h==='R'?'rh':'lh');k.textContent=nm(x.n)}});
+}
+function flash(n,cls){const k=keys[n];if(!k)return;k.classList.add(cls);setTimeout(()=>{k.classList.remove(cls);paintKeys()},280)}
+
+// ---- 次の音表示 ----
+function show(){
+  const ev=events[idx];
+  ['R','L'].forEach(h=>{const box=$(h==='R'?'hr':'hl');const on=st.hand==='B'||st.hand===h;box.classList.toggle('off',!on);
+    const ns=ev?ev.notes.filter(x=>x.h===h):[];
+    $(h==='R'?'nr':'nl').textContent=!on?'–':ns.length?ns.map(x=>nm(x.n)).join(' '):(ev?'（そのまま）':'–');
+    $(h==='R'?'fr':'fl').textContent=ns.length&&ns[0].f?ns[0].f+' の指':''});
+  $('prog').textContent=`${Math.min(idx,events.length)} / ${events.length}`;
+  paintKeys();markStaff();
+}
+
+// ---- 五線譜 ----
+const GAP=10,STEP=GAP/2,TOPR=40,TOPL=150; // 上段・下段（どちらもト音記号）の第5線のy
+const L2I={C:0,D:1,E:2,F:3,G:4,A:5,B:6};
+const stepOf=n=>(Math.floor(n/12)-1)*7+L2I[nm(n)[0]];
+const yOf=(n,top)=>top+4*GAP-(stepOf(n)-30)*STEP; // E4=第1線
+let colX=[];
+function drawStaff(){
+  const svg=$('staff');const PAD=60,CW=40;let x=PAD,lastM=null,s='';colX=[];const bars=[];
+  events.forEach((ev,i)=>{const m=Math.floor(ev.t/4+1e-6)+1;if(lastM!==null&&m!==lastM){bars.push([x-6,m]);x+=12}if(lastM===null)bars.push([null,m]);lastM=m;colX.push(x);x+=CW});
+  const W=x+20;svg.setAttribute('width',W);svg.setAttribute('viewBox',`0 0 ${W} 250`);
+  s+=`<rect id="cur" y="8" width="34" height="232" rx="8" fill="#2463eb" opacity=".12"/>`;
+  [TOPR,TOPL].forEach(top=>{for(let i=0;i<5;i++)s+=`<line x1="8" x2="${W-8}" y1="${top+i*GAP}" y2="${top+i*GAP}" stroke="#555" stroke-width="1"/>`;
+    s+=`<text x="12" y="${top+38}" font-size="52" fill="#222" font-family="serif">𝄞</text>`});
+  s+=`<text x="8" y="${TOPR-18}" font-size="12" fill="#2463eb">右手</text><text x="8" y="${TOPL-18}" font-size="12" fill="#e8590c">左手</text>`;
+  bars.forEach(([bx,m])=>{if(bx!==null)s+=`<line x1="${bx}" x2="${bx}" y1="${TOPR}" y2="${TOPL+40}" stroke="#555"/>`;s+=`<text x="${(bx??PAD-14)+4}" y="${TOPL-12}" font-size="11" fill="#888">${m}</text>`});
+  events.forEach((ev,i)=>{const cx=colX[i]+17;
+    ev.notes.forEach(x=>{const top=x.h==='R'?TOPR:TOPL;const y=yOf(x.n,top);const col=x.h==='R'?'#2463eb':'#e8590c';
+      const st0=stepOf(x.n);for(let k=28;k>=st0;k-=2)s+=`<line x1="${cx-11}" x2="${cx+11}" y1="${top+4*GAP-(k-30)*STEP}" y2="${top+4*GAP-(k-30)*STEP}" stroke="#555"/>`;
+      for(let k=40;k<=st0;k+=2)s+=`<line x1="${cx-11}" x2="${cx+11}" y1="${top+4*GAP-(k-30)*STEP}" y2="${top+4*GAP-(k-30)*STEP}" stroke="#555"/>`;
+      const hollow=x.d>=2;
+      s+=`<ellipse class="nh" data-i="${i}" cx="${cx}" cy="${y}" rx="6.5" ry="4.6" transform="rotate(-20 ${cx} ${y})" fill="${hollow?'#fffef9':col}" stroke="${col}" stroke-width="2"/>`;
+      if(x.f)s+=`<text x="${cx}" y="${x.h==='R'?Math.min(TOPR-12,y-12):TOPL+66}" text-anchor="middle" font-size="12" fill="#666">${x.f}</text>`;
+      s+=`<text x="${cx}" y="${x.h==='R'?TOPR+76:TOPL+82}" text-anchor="middle" font-size="12" font-weight="700" fill="${col}">${nm(x.n)}</text>`;
+    })});
+  svg.innerHTML=s;
+}
+function markStaff(){
+  const cur=$('cur');if(!cur)return;
+  if(idx<events.length){cur.setAttribute('x',colX[idx]);cur.style.display='';const box=$('staffBox');const want=colX[idx]-box.clientWidth/3;box.scrollTo({left:Math.max(0,want),behavior:'smooth'})}else cur.style.display='none';
+  document.querySelectorAll('.nh').forEach(e=>{e.style.opacity=(+e.dataset.i<idx)?.3:1});
+}
+
+// ---- 入力判定 ----
+function noteOn(n){
+  if(demoTimers.length)return;
+  if(idx>=events.length)return;
+  if(t0===null)t0=performance.now();
+  if(pending.has(n)){pending.delete(n);flash(n,'hit');
+    if(!pending.size){idx++;setPending();
+      if(idx>=events.length){const sec=((performance.now()-t0)/1000).toFixed(1);$('time').textContent=sec+' 秒';say(miss?`最後まで弾けた！ミスは${miss}回。もう一回やってみよう。`:'ノーミスで弾けた！テンポを上げてみよう。','ok')}
+      else say('いいね、その調子。','ok');
+      show()}
+    else paintKeys();
+  }else{
+    const ev=events[idx];if(ev.notes.some(x=>x.n===n))return;
+    miss++;$('miss').textContent=miss;flash(n,'bad');
+    const want=[...pending].map(nm).join(' と ');
+    say(`いま弾いたのは ${nm(n)}。次は ${want} だよ。${Math.abs([...pending][0]-n)===12?'（オクターブが違うよ）':''}`,'ng');
+  }
+}
+
+// ---- MIDI ----
+function bindInputs(acc){
+  const names=[];acc.inputs.forEach(inp=>{inp.onmidimessage=e=>{const[s,n,v]=e.data;const c=s&0xf0;if(c===0x90&&v>0)noteOn(n)};names.push(inp.name||'MIDI機器')});
+  const box=$('status');if(names.length){box.classList.add('on');$('stxt').textContent='接続中：'+names.join('、')}else{box.classList.remove('on');$('stxt').textContent='ピアノが見つかりません。Bluetooth MIDI の接続を確認してね'}
+}
+if(navigator.requestMIDIAccess){
+  navigator.requestMIDIAccess({sysex:false}).then(acc=>{bindInputs(acc);acc.onstatechange=()=>bindInputs(acc)}).catch(()=>{$('stxt').textContent='MIDI の利用が許可されませんでした'});
+}else{$('stxt').textContent='このブラウザはピアノとつながりません。Web MIDI Browser で開いてね'}
+
+// ---- お手本再生 ----
+function tone(n,when,dur){
+  const o=audio.createOscillator(),g=audio.createGain(),f=440*2**((n-69)/12);
+  o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(.22,when+.01);g.gain.exponentialRampToValueAtTime(.001,when+Math.max(.25,dur)*1.1);
+  o.connect(g).connect(audio.destination);o.start(when);o.stop(when+Math.max(.25,dur)*1.2);
+}
+function stopDemo(){demoTimers.forEach(clearTimeout);demoTimers=[];$('demo').textContent='お手本を聴く';for(const n in keys)keys[n]&&keys[n].classList.remove('play')}
+function demo(){
+  if(demoTimers.length){stopDemo();reset();return}
+  try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume()}catch(e){say('音を鳴らせませんでした','ng');return}
+  const q=60/st.bpm,start=audio.currentTime+.15,base=events.length?events[0].t:0;
+  $('demo').textContent='止める';
+  events.forEach((ev,i)=>{const at=(ev.t-base)*q;
+    ev.notes.forEach(x=>tone(x.n,start+at,x.d*q));
+    demoTimers.push(setTimeout(()=>{idx=i;pending=new Set();show();ev.notes.forEach(x=>{const k=keys[x.n];if(k){k.classList.add('play');setTimeout(()=>k.classList.remove('play'),Math.max(120,x.d*q*900))}})},at*1000+150))});
+  const end=(st.to*4-base)*q;demoTimers.push(setTimeout(()=>{demoTimers=[];stopDemo();reset()},end*1000+600));
+}
+
+// ---- 操作 ----
+const fromS=$('from'),toS=$('to');
+for(let m=1;m<=MAXM;m++){fromS.add(new Option(m,m));toS.add(new Option(m,m))}
+function syncUI(){document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.h===st.hand));fromS.value=st.from;toS.value=st.to;$('bpm').value=st.bpm;$('bpmv').textContent=st.bpm}
+document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{st.hand=b.dataset.h;syncUI();reset()}));
+fromS.addEventListener('change',()=>{st.from=+fromS.value;if(st.to<st.from)st.to=st.from;syncUI();reset()});
+toS.addEventListener('change',()=>{st.to=+toS.value;if(st.from>st.to)st.from=st.to;syncUI();reset()});
+$('bpm').addEventListener('input',()=>{st.bpm=+$('bpm').value;$('bpmv').textContent=st.bpm;save()});
+$('restart').addEventListener('click',reset);
+$('demo').addEventListener('click',demo);
+st.from=Math.min(Math.max(1,st.from),MAXM);st.to=Math.min(Math.max(st.from,st.to),MAXM);
+syncUI();reset();
+}
+</script>
+</body>
+</html>
